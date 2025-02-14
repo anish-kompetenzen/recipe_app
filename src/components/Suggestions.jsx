@@ -1,12 +1,22 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
-import { Button } from 'react-bootstrap';
-import { Modal } from 'reactstrap';
+import { Modal, Button, ModalHeader, ModalTitle } from 'react-bootstrap';
 
 const Suggestions = ({ count, query, page, favourites, setFavourites, favouriteRecipeIds, setFavouriteRecipeIds }) => {
 
     const [suggestions, setSuggestions] = useState([]);
     const [dishCount, setDishCount] = useState(8);
+    const [recipe, setRecipe] = useState({
+        "publisher": "Demo Publisher",
+        "ingredients": [],
+        "source_url": "Demo URL",
+        "recipe_id": "",
+        "image_url": "Demo Imagge",
+        "social_rank": 0,
+        "publisher_url": "Demo URL",
+        "title": "Demo Title"
+    }
+    );
 
     const words = [
         "carrot", "broccoli", "asparagus", "cauliflower", "corn", "cucumber", "green pepper",
@@ -95,27 +105,36 @@ const Suggestions = ({ count, query, page, favourites, setFavourites, favouriteR
     const handleClose = () => setShow(false);
     const handleShow = () => setShow(true);
 
-    function handleView(recipeId) {
-        // handleShow();
-        console.log(recipeId);
+    async function handleView(recipeId) {
+        handleShow();
+        try {
+            const response = await axios.get("https://forkify-api.herokuapp.com/api/get?rId=" + recipeId);
+            setRecipe(response.data.recipe);
+        } catch (error) {
+            console.log("Error : " + error);
+        }
     }
 
     return (
         <>
             <div className="container-fluid px-5">
                 <Modal show={show} onHide={handleClose}>
-                    <Modal.Header closeButton>
-                        <Modal.Title>Modal heading</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>Woohoo, you are reading this text in a modal!</Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={handleClose}>
-                            Close
-                        </Button>
-                        <Button variant="primary" onClick={handleClose}>
-                            Save Changes
-                        </Button>
-                    </Modal.Footer>
+                    <ModalHeader className='card p-0 m-0'>
+                        <img src={recipe.image_url} alt="Dish Image" className='' style={{ width: "450px" }} />
+                        <ModalTitle className='px-2'>
+                            <span>{decodeHtml(toTitleCase(recipe.title))}</span>
+                        </ModalTitle>
+                    </ModalHeader>
+                    <Modal.Body>
+                        <h6>Ingredients + Steps to Cook Dish</h6>
+                        <ul>
+                            {recipe.ingredients.map((item, index) => {
+                                return (
+                                    <li key={index}>{item}</li>
+                                );
+                            })}
+                        </ul>
+                    </Modal.Body>
                 </Modal>
                 <div className="row">
                     {suggestions.map((item, index) => {
@@ -133,7 +152,7 @@ const Suggestions = ({ count, query, page, favourites, setFavourites, favouriteR
                                             <p className="card-text"><strong>Publisher:</strong> {item.publisher}</p>
                                             <p className="card-text"><strong>Rating:</strong> {Number.parseInt(item.social_rank)}</p>
                                             <div className="d-flex justify-content-between align-items-center">
-                                                <a href={item.source_url} target='_blank' className='fw-bold'>See Recipe</a>
+                                                <a href={item.source_url} target='_blank' className='fw-bold'>Check it out</a>
                                                 <span onClick={() => toggleFavourite(item)} style={{ fontSize: "20px" }}>
                                                     {favouriteRecipeIds.includes(item.recipe_id) ?
                                                         <span>{"❤️"}</span> : <span>{"🩶"}</span>}
